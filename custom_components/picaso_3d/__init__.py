@@ -47,7 +47,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.device_registry import DeviceInfo, CONNECTION_NETWORK_MAC
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
@@ -245,6 +245,7 @@ class Picaso3DCoordinatorEntity(
             model=self.printer.type.name,
             name=self.printer.name,
             identifiers={(DOMAIN, self.printer.serial)},
+            connections={(CONNECTION_NETWORK_MAC, self.printer.mac)}
         )
 
     @property
