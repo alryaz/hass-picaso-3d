@@ -16,6 +16,7 @@ __all__ = (
     "Picaso3DCoordinatorEntityDescription",
     # Extra
     "TMethodName",
+    "support_check_multi_nozzle",
     # Submodules
     "api",
     "binary_sensor",
@@ -55,7 +56,11 @@ from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
 )
 
-from custom_components.picaso_3d.api import DEFAULT_INTERACTION_PORT, Picaso3DPrinter
+from custom_components.picaso_3d.api import (
+    DEFAULT_INTERACTION_PORT,
+    Picaso3DPrinter,
+    PrinterType,
+)
 from custom_components.picaso_3d.const import (
     DOMAIN,
     DEFAULT_SCAN_INTERVAL,
@@ -294,6 +299,12 @@ class Picaso3DCoordinatorEntity(
                     self._process_coordinator_data(result)
 
         super()._handle_coordinator_update()
+
+
+def support_check_multi_nozzle(printer: Picaso3DPrinter) -> bool:
+    if not isinstance(printer.type, PrinterType) or printer.type == PrinterType.UNKNOWN:
+        return False
+    return printer.type.is_multi_nozzle
 
 
 async def async_initialize_printer_connection(
