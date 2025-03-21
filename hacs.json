@@ -1,0 +1,8 @@
+{
+    "name": "PICASO 3D",
+    "filename": "picaso_3d.zip",
+    "hide_default_branch": false,
+    "homeassistant": "2025.3.0",
+    "render_readme": true,
+    "zip_release": false
+}
