@@ -25,7 +25,13 @@ from custom_components.picaso_3d import (
     Picaso3DCoordinatorEntityDescription,
     make_platform_async_setup_entry,
 )
-from custom_components.picaso_3d.api import NetPrinterStatus, NetPrinterState, Picaso3DPrinter, StopReason, PauseReason
+from custom_components.picaso_3d.api import (
+    NetPrinterStatus,
+    NetPrinterState,
+    Picaso3DPrinter,
+    StopReason,
+    PauseReason,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +47,7 @@ class Picaso3DSensor(
     Picaso3DCoordinatorEntity[Picaso3DSensorEntityDescription], SensorEntity
 ):
     """Picaso3D Sensor class."""
+
 
 def _get_enum_names(enum):
     return [v.name.lower() for v in enum]
@@ -140,7 +147,9 @@ ENTITY_DESCRIPTIONS = (
         device_class=SensorDeviceClass.ENUM,
         options=_get_enum_names(PauseReason) + ["none"],
         update_method_name=Picaso3DPrinter.get_printer_state,
-        icon=lambda x: "mdi:motion-pause-outline" if x.state == "none" else "mdi:motion-pause"
+        icon=lambda x: (
+            "mdi:motion-pause-outline" if x.state == "none" else "mdi:motion-pause"
+        ),
     ),
     Picaso3DSensorEntityDescription(
         key="stop_reason",
@@ -150,7 +159,9 @@ ENTITY_DESCRIPTIONS = (
         device_class=SensorDeviceClass.ENUM,
         options=_get_enum_names(StopReason) + ["none"],
         update_method_name=Picaso3DPrinter.get_printer_state,
-        icon=lambda x: "mdi:octagon-outline" if x.state == "none" else "mdi:close-octagon"
+        icon=lambda x: (
+            "mdi:octagon-outline" if x.state == "none" else "mdi:close-octagon"
+        ),
     ),
     # Picaso3DSensorEntityDescription(
     #     key="ready",

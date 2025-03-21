@@ -82,6 +82,7 @@ CONFIG_SCHEMA = vol.Schema(
 
 TMethodName = Callable[[Picaso3DPrinter], Any] | str
 
+
 @dataclass(frozen=True, kw_only=True)
 class Picaso3DCoordinatorEntityDescription(EntityDescription):
     """Describes Picaso3D entity."""
@@ -98,7 +99,9 @@ class Picaso3DCoordinatorEntityDescription(EntityDescription):
     icon: str | Callable[[Picaso3DCoordinatorEntity], str | None] | None = None
 
     def __post_init__(self):
-        if not (isinstance(self.update_method_name, str) or self.update_method_name is None):
+        if not (
+            isinstance(self.update_method_name, str) or self.update_method_name is None
+        ):
             object.__setattr__(
                 self, "update_method_name", self.update_method_name.__name__
             )
@@ -112,7 +115,9 @@ class Picaso3DUpdateCoordinator(DataUpdateCoordinator):
     def __init__(self, *args, **kwargs) -> None:
         self._update_methods = {}
         super().__init__(*args, **kwargs)
-        self.logger.debug("Created coordinator %s with scan interval %s", self, self.update_interval)
+        self.logger.debug(
+            "Created coordinator %s with scan interval %s", self, self.update_interval
+        )
 
     def subscribe_entity(self, entity: Picaso3DCoordinatorEntity):
         entities = self._update_methods.setdefault(
