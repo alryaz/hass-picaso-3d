@@ -24,6 +24,7 @@ from custom_components.picaso_3d import (
     Picaso3DCoordinatorEntity,
     Picaso3DCoordinatorEntityDescription,
     make_platform_async_setup_entry,
+    support_check_multi_nozzle,
 )
 from custom_components.picaso_3d.api import (
     NetPrinterStatus,
@@ -118,6 +119,7 @@ ENTITY_DESCRIPTIONS = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         suggested_display_precision=1,
+        check_supported=support_check_multi_nozzle,
     ),
     Picaso3DSensorEntityDescription(
         key="chamber_temperature",
