@@ -96,6 +96,9 @@ class Picaso3DCoordinatorEntityDescription(EntityDescription):
     converter: Callable[[Any], Any] | None = None
     """Function to convert the extracted attribute."""
 
+    check_supported: Callable[[Picaso3DPrinter], bool] | None = None
+    """Check whether entity is supported by given printer."""
+
     icon: str | Callable[[Picaso3DCoordinatorEntity], str | None] | None = None
 
     def __post_init__(self):
@@ -391,13 +394,16 @@ def make_platform_async_setup_entry(
         async_add_entities: AddEntitiesCallback,
     ) -> bool:
         """Do the setup entry."""
+        coordinator= hass.data[DOMAIN][entry.entry_id][1]
         entities = [
             platform_class(
-                coordinator=hass.data[DOMAIN][entry.entry_id][1],
+                coordinator=,
                 entity_description=entity_description,
                 logger=logger,
             )
             for entity_description in entity_descriptions
+            if entity_description.check_supported is None
+            or entity_description.check_supported(coordinator.printer)
         ]
 
         logger.debug("Entities added : %i", len(entities))
