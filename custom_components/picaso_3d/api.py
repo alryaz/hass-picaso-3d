@@ -855,6 +855,7 @@ class Picaso3DPrinter:
     async def change_name(self, new_name: str) -> None:
         _LOGGER.debug("Changing printer name to %s...", new_name)
         new_name = encode_standard_string(self.supports_utf8, new_name)
+        new_name = struct.pack("20s", new_name)
         await self.send_request_v1_atomic(0x000D, new_name)
 
     @sequential_request_guard
