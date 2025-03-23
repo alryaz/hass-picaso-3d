@@ -3,7 +3,7 @@
 NAME = "PICASO 3D"
 DOMAIN = "picaso_3d"
 # PLATFORMS = ("sensor", "binary_sensor", "button")
-PLATFORMS = ("sensor", "switch")
+PLATFORMS = ("sensor", "switch", "text")
 
 DEFAULT_SCAN_INTERVAL = 30
 

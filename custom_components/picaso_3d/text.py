@@ -4,6 +4,7 @@ import logging
 from dataclasses import dataclass
 
 from homeassistant.components.text import TextEntity, TextEntityDescription
+from homeassistant.const import EntityCategory
 
 from custom_components.picaso_3d import (
     Picaso3DCoordinatorEntity,
@@ -39,6 +40,7 @@ ENTITY_DESCRIPTIONS = [
         name="Printer Name",
         update_method_name=Picaso3DPrinter.update_printer_info,
         set_method_name=Picaso3DPrinter.change_name,
+        entity_category=EntityCategory.CONFIG,
     ),
 ]
 
