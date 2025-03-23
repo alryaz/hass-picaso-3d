@@ -287,7 +287,7 @@ DEFAULT_INTERACTION_PORT = 54321
 
 class Picaso3DPrinter:
     UDP_RETRY_CNT = 3
-    DEFAULT_READ_TIMEOUT = 3
+    DEFAULT_READ_TIMEOUT = 5
 
     def __init__(self, host: str, port: int = DEFAULT_INTERACTION_PORT) -> None:
         self.host = host
@@ -828,7 +828,7 @@ class Picaso3DPrinter:
             raise
 
     @sequential_request_guard
-    async def update_printer_info(self) -> None:
+    async def update_printer_info(self):
         """Update basic printer information."""
         _LOGGER.debug("Refreshing printer information...")
         command_code = 0x000C
@@ -840,6 +840,7 @@ class Picaso3DPrinter:
         self._apply_printer_info(
             response.protocol_major, response.protocol_minor, response.data
         )
+        return self
 
     @sequential_request_guard
     async def start_locating(self) -> None:
