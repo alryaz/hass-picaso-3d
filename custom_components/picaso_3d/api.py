@@ -155,9 +155,10 @@ class StopReason(IntFlag):
     HARDWARE_ERROR = 2**4
 
 
-_RE_SPACE_CAPITALS = re.compile(r'(?<=[a-z0-9])(?=[A-Z])')
-_RE_SPACE_FOLLOWS = re.compile(r'(?<=[A-Z])(?=[A-Z][a-z])')
-_RE_SPACE_DIGITS = re.compile(r'(?<=[A-Za-z])(?=\d)')
+_RE_SPACE_CAPITALS = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+_RE_SPACE_FOLLOWS = re.compile(r"(?<=[A-Z])(?=[A-Z][a-z])")
+_RE_SPACE_DIGITS = re.compile(r"(?<=[A-Za-z])(?=\d)")
+
 
 class PrinterType(IntEnum):
     UNKNOWN = -1
@@ -177,9 +178,9 @@ class PrinterType(IntEnum):
     @property
     def friendly_name(self) -> str:
         name = self.name
-        name = _RE_SPACE_CAPITALS.sub(' ', name)
-        name = _RE_SPACE_FOLLOWS.sub(' ', name)
-        name = _RE_SPACE_DIGITS.sub(' ', name)
+        name = _RE_SPACE_CAPITALS.sub(" ", name)
+        name = _RE_SPACE_FOLLOWS.sub(" ", name)
+        name = _RE_SPACE_DIGITS.sub(" ", name)
         return name
 
     @property

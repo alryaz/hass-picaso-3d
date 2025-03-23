@@ -55,7 +55,8 @@ class Picaso3DSwitch(Picaso3DCoordinatorEntity, SwitchEntity):
 
     def _process_coordinator_data(self, value) -> None:
         super()._process_coordinator_data(value)
-        self._attr_is_on = bool(self._attr_native_value)
+        if self.entity_description.update_method_name:
+            self._attr_is_on = bool(self._attr_native_value)
 
 
 async_setup_entry = make_platform_async_setup_entry(

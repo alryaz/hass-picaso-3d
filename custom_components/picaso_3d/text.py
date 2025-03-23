@@ -28,9 +28,7 @@ class Picaso3DTextEntityDescription(
     def __post_init__(self):
         super().__post_init__()
         if not isinstance(self.set_method_name, str):
-            object.__setattr__(
-                self, "set_method_name", self.set_method_name.__name__
-            )
+            object.__setattr__(self, "set_method_name", self.set_method_name.__name__)
 
 
 ENTITY_DESCRIPTIONS = [

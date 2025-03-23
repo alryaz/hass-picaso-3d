@@ -118,74 +118,24 @@ class Picaso3DCoordinatorEntityDescription(EntityDescription):
 class Picaso3DUpdateCoordinator(DataUpdateCoordinator):
     """Picaso3D Update Coordinator class."""
 
-    __slots__ = ("_update_methods",)
+    __slots__ = ()
 
-    def __init__(self, *args, **kwargs) -> None:
-        self._update_methods = {}
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, update_method_name: str, **kwargs) -> None:
+        assert "update_method" not in kwargs
+        super().__init__(
+            *args,
+            update_method=lambda: getattr(self.printer, update_method_name)(),
+            **kwargs,
+        )
         self.logger.debug(
-            "Created coordinator %s with scan interval %s", self, self.update_interval
+            "Created coordinator %s with scan interval %s",
+            self.name,
+            self.update_interval,
         )
-
-    def subscribe_entity(self, entity: Picaso3DCoordinatorEntity):
-        entities = self._update_methods.setdefault(
-            entity.entity_description.update_method_name, []
-        )
-        if entity not in entities:
-            entities.append(entity)
-            self.logger.debug(
-                "Subscribed entity %s to coordinator %s with method %s",
-                entity,
-                self,
-                entity.entity_description.update_method_name,
-            )
-
-    def unsubscribe_entity(self, entity: Picaso3DCoordinatorEntity):
-        update_method_name = entity.entity_description.update_method_name
-        entities = self._update_methods.get(update_method_name, [])
-        while entity in entities:
-            entities.remove(entity)
-            self.logger.debug(
-                "Unsubscribed entity %s from coordinator %s with method %s",
-                entity,
-                self,
-                update_method_name,
-            )
-        if not entities:
-            del self._update_methods[update_method_name]
-            self.logger.debug(
-                "Clearing up empty queue for method %s on coordinator %s",
-                update_method_name,
-                self,
-            )
 
     @property
     def printer(self) -> Picaso3DPrinter:
         return self.hass.data[DOMAIN][self.config_entry.entry_id][0]
-
-    async def _async_update_data(self) -> dict[str, Any]:
-        self.logger.debug("Updating data for %s", self)
-        data = {}
-        if self._update_methods:
-            exceptions = []
-            one_success = False
-            for method_name, entities in self._update_methods.items():
-                method = getattr(self.printer, method_name)
-                try:
-                    one_success = True
-                    result = await method()
-                except Exception as exc:
-                    result = exc
-                    exceptions.append(exc)
-                data[method_name] = result
-            if not one_success:
-                if len(exceptions) == 1:
-                    raise exceptions[0]
-                raise HomeAssistantError(
-                    f"All update methods ({', '.join(self._update_methods)} failed"
-                )
-        self.logger.debug("Finished data update for %s", self)
-        return data
 
 
 _TPicaso3DCoordinatorEntityDescription = TypeVar(
@@ -230,18 +180,6 @@ class Picaso3DCoordinatorEntity(
             return icon(self)
         return icon
 
-    async def async_added_to_hass(self) -> None:
-        """Subscribe to updates."""
-        await super().async_added_to_hass()
-        if self.entity_description.update_method_name is None:
-            return
-        self.coordinator.subscribe_entity(self)
-        self.async_on_remove(lambda: self.coordinator.unsubscribe_entity(self))
-
-    async def async_will_remove_from_hass(self) -> None:
-        """Unsubscribe from updates."""
-        self.coordinator.unsubscribe_entity(self)
-
     @property
     def device_info(self) -> DeviceInfo:
         return DeviceInfo(
@@ -253,7 +191,7 @@ class Picaso3DCoordinatorEntity(
             model=self.printer.type.friendly_name,
             name=self.printer.name,
             identifiers={(DOMAIN, self.printer.serial)},
-            connections={(CONNECTION_NETWORK_MAC, self.printer.mac)}
+            connections={(CONNECTION_NETWORK_MAC, self.printer.mac)},
         )
 
     @property
@@ -279,24 +217,11 @@ class Picaso3DCoordinatorEntity(
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        collected_data = self.coordinator.data
-        try:
-            result = collected_data[self.entity_description.update_method_name]
-        except KeyError:
-            self.logger.debug(
-                "No data for %s in %s",
-                self.entity_description.update_method_name,
-                collected_data,
-            )
-            self._attr_available = False
-        else:
-            if isinstance(result, Exception):
-                self.logger.error("Error during update: %s", result)
-                self._attr_available = False
-            else:
-                self._attr_available = result is not None
-                if self._attr_available:
-                    self._process_coordinator_data(result)
+        data = self.coordinator.data
+        self._attr_available = data is not None
+
+        if self._attr_available:
+            self._process_coordinator_data(data)
 
         super()._handle_coordinator_update()
 
@@ -327,6 +252,25 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     return True
 
 
+@callback
+def async_get_coordinator(
+    hass: HomeAssistant, entry: ConfigEntry, update_method_name: str
+) -> Picaso3DUpdateCoordinator:
+    # Iterate over the collected update_method_names
+    coordinators = hass.data[DOMAIN][entry.entry_id][1]
+    if update_method_name not in coordinators:
+        coordinator = Picaso3DUpdateCoordinator(
+            hass,
+            _LOGGER,
+            config_entry=entry,
+            name="PICASO 3D Updater for '{}' method".format(update_method_name),
+            update_interval=timedelta(seconds=entry.data[CONF_SCAN_INTERVAL]),
+            update_method_name=update_method_name,
+        )
+        coordinators[update_method_name] = coordinator
+    return coordinators[update_method_name]
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up this integration using UI."""
 
@@ -340,36 +284,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.warning("Error during initial communication: %s", exc, **logger_kwargs)
         raise ConfigEntryNotReady("Error connecting to the Picaso3D printer") from exc
 
-    # Create sequential coordinator
-    coordinator = Picaso3DUpdateCoordinator(
-        hass,
-        _LOGGER,
-        config_entry=entry,
-        name="PICASO 3D Sequential Updater",
-        update_interval=timedelta(seconds=entry.data[CONF_SCAN_INTERVAL]),
-    )
+    coordinators: dict[str, Picaso3DUpdateCoordinator] = {}
 
     # Store data for future use
-    hass.data[DOMAIN][entry.entry_id] = (printer, coordinator)
+    hass.data[DOMAIN][entry.entry_id] = (printer, coordinators)
 
     # up platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Since updates are sequential, perform like this
-    try:
-        await coordinator.async_config_entry_first_refresh()
-    except asyncio.CancelledError:
-        raise
-    except Exception as exc:
-        logger_kwargs = {}
-        if _LOGGER.isEnabledFor(logging.DEBUG):
-            logger_kwargs["exc_info"] = exc
-        _LOGGER.error(
-            "Error during first refresh of '%s': %s",
-            coordinator,
-            exc,
-            **logger_kwargs,
+    coordinator_refresh_tasks = {
+        coordinator: hass.async_create_task(
+            coordinator.async_config_entry_first_refresh()
         )
+        for coordinator in coordinators.values()
+    }
+    if coordinator_refresh_tasks:
+        await asyncio.wait(
+            coordinator_refresh_tasks.values(), return_when=asyncio.ALL_COMPLETED
+        )
+        for coordinator, task in coordinator_refresh_tasks.items():
+            exc = task.exception()
+            if exc and not isinstance(exc, asyncio.CancelledError):
+                logger_kwargs = {}
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    logger_kwargs["exc_info"] = exc
+                _LOGGER.error(
+                    "Error during first refresh of '%s': %s",
+                    coordinator.name,
+                    exc,
+                    **logger_kwargs,
+                )
 
     _LOGGER.debug("Finished setting up config entry %s", entry.entry_id)
 
@@ -393,6 +338,9 @@ async def async_unload_entry(hass: HomeAssistant, entry):
     return True
 
 
+DEFAULT_UPDATE_METHOD_NAME = "get_printer_state"
+
+
 def make_platform_async_setup_entry(
     entity_descriptions: Iterable[Picaso3DCoordinatorEntityDescription],
     platform_class: type[Picaso3DCoordinatorEntity],
@@ -405,16 +353,20 @@ def make_platform_async_setup_entry(
         async_add_entities: AddEntitiesCallback,
     ) -> bool:
         """Do the setup entry."""
-        coordinator= hass.data[DOMAIN][entry.entry_id][1]
+        printer = hass.data[DOMAIN][entry.entry_id][0]
         entities = [
             platform_class(
-                coordinator=coordinator,
+                coordinator=async_get_coordinator(
+                    hass,
+                    entry,
+                    entity_description.update_method_name or DEFAULT_UPDATE_METHOD_NAME,
+                ),
                 entity_description=entity_description,
                 logger=logger,
             )
             for entity_description in entity_descriptions
             if entity_description.check_supported is None
-            or entity_description.check_supported(coordinator.printer)
+            or entity_description.check_supported(printer)
         ]
 
         logger.debug("Entities added : %i", len(entities))
