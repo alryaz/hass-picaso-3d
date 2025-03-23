@@ -277,7 +277,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Initialize and connect API
     try:
         printer = await async_initialize_printer_connection(entry.data, entry.options)
-    except (aiohttp.ClientConnectorError, aiohttp.ClientResponseError) as exc:
+    except OSError as exc:
         logger_kwargs = {}
         if _LOGGER.isEnabledFor(logging.DEBUG):
             logger_kwargs["exc_info"] = exc

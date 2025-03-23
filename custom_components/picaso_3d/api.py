@@ -281,16 +281,7 @@ def sequential_request_guard(method: Callable[["Picaso3DPrinter", ...], ...]):
     @wraps(method)
     async def wrapper(self, *args, **kwargs):
         async with self.request_lock:
-            try:
-                return await method(self, *args, **kwargs)
-            except (socket.timeout, ConnectionError) as exc:
-                _LOGGER.error(f"{method.__name__} - Network error: {exc}", exc_info=exc)
-                raise
-            except Exception as exc:
-                _LOGGER.error(
-                    f"{method.__name__} - Unexpected error: {exc}", exc_info=exc
-                )
-                raise
+            return await method(self, *args, **kwargs)
 
     return wrapper
 
