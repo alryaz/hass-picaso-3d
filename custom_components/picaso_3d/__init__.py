@@ -408,7 +408,7 @@ def make_platform_async_setup_entry(
         coordinator= hass.data[DOMAIN][entry.entry_id][1]
         entities = [
             platform_class(
-                coordinator=,
+                coordinator=coordinator,
                 entity_description=entity_description,
                 logger=logger,
             )
