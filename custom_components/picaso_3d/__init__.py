@@ -250,7 +250,7 @@ class Picaso3DCoordinatorEntity(
             sw_version=self.printer.firmware_version,
             hw_version=self.printer.hardware_version,
             model_id=self.printer.hw_version_major,
-            model=self.printer.type.name,
+            model=self.printer.type.friendly_name,
             name=self.printer.name,
             identifiers={(DOMAIN, self.printer.serial)},
             connections={(CONNECTION_NETWORK_MAC, self.printer.mac)}

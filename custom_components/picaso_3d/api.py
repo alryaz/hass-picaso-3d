@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import re
 import socket
 import struct
 from collections.abc import Callable
@@ -154,6 +155,9 @@ class StopReason(IntFlag):
     HARDWARE_ERROR = 2**4
 
 
+_RE_SPACE_CAPITALS = re.compile(r'(?<=[a-z0-9])(?=[A-Z])')
+_RE_SPACE_DIGITS = re.compile(r'(?<=[A-Za-z])(?=\d)')
+
 class PrinterType(IntEnum):
     UNKNOWN = -1
     DesignerXPro = 4
@@ -168,6 +172,13 @@ class PrinterType(IntEnum):
     DesignerXL2 = 13
     DesignerXPro2 = 14
     DesignerXLPro2 = 15
+
+    @property
+    def friendly_name(self) -> str:
+        name = self.name
+        name = _RE_SPACE_CAPITALS.sub(' ', name)
+        name = _RE_SPACE_DIGITS.sub(' ', name)
+        return name
 
     @property
     def is_xl(self):
